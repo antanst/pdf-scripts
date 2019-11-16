@@ -61,21 +61,21 @@ eval "parallel --bar ::: ${COMMANDS}" # See https://stackoverflow.com/questions/
 # darken images, and combine
 # darkened images to new PDFs
 COMMANDS1=""
-COMMANDS2=""
+#COMMANDS2=""
 COMMANDS3=""
 for file in "${WORKDIR}"/p*.pdf;
 do
     DIR="${WORKDIR}/$(basename "${file}" .pdf)"
     mkdir -p "${DIR}"
-    COMMANDS1=${COMMANDS1}" '""convert -colorspace RGB -density 350 -alpha remove \"${file}\" ${DIR}/output-%05d.png""'"
-    COMMANDS2=${COMMANDS2}" '""mogrify -morphology erode diamond:1 ${DIR}/output*.png""'"
+    COMMANDS1=${COMMANDS1}" '""convert -colorspace RGB -density 350 -negate -alpha remove \"${file}\" ${DIR}/output-%05d.png""'"
+#    COMMANDS2=${COMMANDS2}" '""mogrify -morphology erode diamond:1 ${DIR}/output*.png""'"
     COMMANDS3=${COMMANDS3}" '""convert ${DIR}/output*.png ${WORKDIR}/dark-$(basename "${file}" .pdf).pdf""'"
 done
 
 echo "Splitting PDFs to images..." >&2
 eval "parallel --bar ::: ${COMMANDS1}"
-echo "Darkening images..." >&2
-eval "parallel --bar ::: ${COMMANDS2}"
+#echo "Darkening images..." >&2
+#eval "parallel --bar ::: ${COMMANDS2}"
 echo "Merging images to PDFs..." >&2
 eval "parallel --bar ::: ${COMMANDS3}"
 

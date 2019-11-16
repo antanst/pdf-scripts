@@ -1,3 +1,6 @@
+# All those functions are portable and should
+# work across all UNIX systems using Bash.
+
 #
 # Generate random string of given length
 #
