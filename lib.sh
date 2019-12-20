@@ -1,5 +1,9 @@
-# All those functions are portable and should
-# work across all UNIX systems using Bash.
+#
+# Remove double quotes from start and end of input
+#
+remove_double_quotes() {
+    sed -e 's/^"//' -e 's/"$//' <<< "${1}"
+}
 
 #
 # Generate random string of given length
@@ -21,11 +25,21 @@ check_depends() {
 }
 
 #
-# Get absolute path for file
+# Get absolute path, base name and extension only for file
 # See https://stackoverflow.com/questions/3915040/bash-fish-command-to-print-absolute-path-to-a-file
 #
 fullpath() {
     printf "$(cd "$(dirname "$1")"; pwd)/$(basename "$1")"
+}
+
+basefilename() {
+    filename=$(basename -- "${1}")
+    printf "${filename%.*}"
+}
+
+extension() {
+    filename=$(basename -- "${1}")
+    printf "${filename##*.}"
 }
 
 #
@@ -37,4 +51,25 @@ file_readable() {
 	exit 1
     fi
 }
+
+#
+# Test SSH access
+#
+l_test_ssh_access() {
+    if ! ssh "${1}" true; then
+        echo "Cannot access target via SSH" >&2
+        exit 1
+    fi
+}
+
+#
+# File exists at path in host
+#
+lcopy() {
+    scp -rv "${1}" "${2}:${3}"
+}
+
+#
+# Line exists at file
+#
 

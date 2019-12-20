@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 LC_ALL=C # For portability
-set -e # Stop on error
+#set -e # Stop on error
 #set -x # Echo commands as they are executed
 
 # Get this script's folder
@@ -19,11 +19,11 @@ usage() {
 # Check for correct number of arguments
 [ $# -gt 2 ] || [ $# -lt 2 ] && usage "Wrong number of arguments"
 
-check_depends "hexdump gs pdfinfo awk expr parallel convert"
+check_depends "hexdump gs pdfinfo awk expr parallel convert pngquant"
 file_readable "${1}"
 
 # Random folder within /tmp to house temp files
-WORKDIR=/tmp/$(hexdump -n 12 -v -e '/1 "%02X"' /dev/urandom)
+WORKDIR=./tmp/$(hexdump -n 12 -v -e '/1 "%02X"' /dev/urandom)
 
 # Make sure we clean up after ourselves.
 # See https://www.shellscript.sh/trap.html
@@ -58,31 +58,35 @@ done
 eval "parallel --bar ::: ${COMMANDS}" # See https://stackoverflow.com/questions/7454526/variable-containing-multiple-args-with-quotes-in-bash
 
 # Convert each PDF to images,
-# darken images, and combine
-# darkened images to new PDFs
+# darken & compress images, and
+# combine darkened images to new PDFs
 COMMANDS1=""
 COMMANDS2=""
 COMMANDS3=""
+COMMANDS4=""
 for file in "${WORKDIR}"/p*.pdf;
 do
     DIR="${WORKDIR}/$(basename "${file}" .pdf)"
     mkdir -p "${DIR}"
     COMMANDS1=${COMMANDS1}" '""convert -colorspace RGB -density 300 -alpha remove \"${file}\" ${DIR}/output-%05d.png""'"
     COMMANDS2=${COMMANDS2}" '""mogrify -morphology erode diamond:1 ${DIR}/output*.png""'"
-    COMMANDS3=${COMMANDS3}" '""convert ${DIR}/output*.png ${WORKDIR}/dark-$(basename "${file}" .pdf).pdf""'"
+    COMMANDS3=${COMMANDS3}" '""pngquant --quality 60-80 --posterize 1 --strip --ext=.png --force --skip-if-larger --speed 1 ${DIR}/output*.png""'"
+    COMMANDS4=${COMMANDS4}" '""convert ${DIR}/output*.png ${WORKDIR}/dark-$(basename "${file}" .pdf).pdf""'"
 done
 
 echo "Splitting PDFs to images..." >&2
 eval "nice parallel --bar ::: ${COMMANDS1}"
 echo "Darkening images..." >&2
 eval "nice parallel --bar ::: ${COMMANDS2}"
-echo "Merging images to PDFs..." >&2
+echo "Compressing images..." >&2
 eval "nice parallel --bar ::: ${COMMANDS3}"
+echo "Merging images to PDFs..." >&2
+eval "nice parallel --bar ::: ${COMMANDS4}"
 
 # Combine PDFs back to one
 # Possible compression levels, from worst quality to best: 'screen', 'ebook', 'printer', 'prepress'
 echo "Combining final PDF..." >&2
-nice gs -dNOPAUSE -sDEVICE=pdfwrite -sOUTPUTFILE="${2}" -dCompatibilityLevel=1.4 -dPDFSETTINGS=/printer -dBATCH `find ${WORKDIR} -name dark-*pdf -depth 1 | sort -V | paste -sd ' ' -` >/dev/null 2>&1
+nice gs -dNOPAUSE -sDEVICE=pdfwrite -sOUTPUTFILE="${2}" -dCompatibilityLevel=1.4 -dPDFSETTINGS=/printer -dBATCH `find ${WORKDIR} -name dark-*pdf -depth | sort -V | paste -sd ' ' -` >/dev/null 2>&1
 
 # Clean up after ourselves
 cleanup
