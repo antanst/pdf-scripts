@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
+set -euo pipefail
 LC_ALL=C # For portability
-#set -e # Stop on error
-#set -x # Echo commands as they are executed
 
 # Get this script's folder
 BASEDIR=$(dirname "$0")
