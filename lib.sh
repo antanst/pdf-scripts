@@ -9,7 +9,7 @@ remove_double_quotes() {
 # Generate random string of given length
 #
 random_string() {
-    cat /dev/urandom | LC_ALL=C tr -dc 'a-zA-Z0-9' | fold -w "${1}" | head -n 1
+    LC_ALL=C tr -dc 'a-zA-Z0-9' < /dev/urandom | fold -w "${1}" | head -n 1
 }
 
 #
@@ -46,7 +46,7 @@ extension() {
 # Check that a file exists and is readable
 #
 file_readable() {
-    if [ ! -z "${1}" ] && [ ! -r "${1}" ]; then
+    if [ -n "${1}" ] && [ ! -r "${1}" ]; then
 	echo "Cannot read file ${1}"
 	exit 1
     fi

@@ -26,7 +26,7 @@ WORKDIR=/tmp/$(hexdump -n 12 -v -e '/1 "%02X"' /dev/urandom)
 
 # Make sure we clean up after ourselves.
 # See https://www.shellscript.sh/trap.html
-trap cleanup 1 2 3 6
+#trap cleanup 1 2 3 6
 cleanup() {
   echo "Cleaning up."
   rm -rf "${WORKDIR}"
@@ -81,10 +81,10 @@ eval "nice parallel --bar ::: ${COMMANDS3}"
 # Combine PDFs back to one
 # Possible compression levels, from worst quality to best: 'screen', 'ebook', 'printer', 'prepress'
 echo "Combining final PDF..." >&2
-nice gs -dNOPAUSE -sDEVICE=pdfwrite -sOUTPUTFILE="${2}" -dCompatibilityLevel=1.4 -dPDFSETTINGS=/printer -dBATCH `find ${WORKDIR} -name dark-*pdf -depth 1 | sort -V | paste -sd ' ' -` >/dev/null 2>&1
+nice `which gs` -dNOPAUSE -sDEVICE=pdfwrite -sOUTPUTFILE="${2}" -dCompatibilityLevel=1.4 -dPDFSETTINGS=/printer -dBATCH `find ${WORKDIR} -maxdepth 1 -name "dark-*pdf" | sort -V | paste -sd ' ' -` >/dev/null 2>&1
 
 # Clean up after ourselves
-cleanup
+#cleanup
 exit 0
 
 echo "Done!" >&2

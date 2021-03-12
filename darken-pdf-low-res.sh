@@ -81,7 +81,7 @@ eval "nice parallel --bar ::: ${COMMANDS3}"
 # Combine PDFs back to one
 # Possible compression levels, from worst quality to best: 'screen', 'ebook', 'printer', 'prepress'
 echo "Combining final PDF..." >&2
-nice gs -dNOPAUSE -sDEVICE=pdfwrite -sOUTPUTFILE="${2}" -dCompatibilityLevel=1.4 -dPDFSETTINGS=/printer -dBATCH `find ${WORKDIR} -name dark-*pdf -depth 1 | sort -V | paste -sd ' ' -` >/dev/null 2>&1
+nice /usr/bin/gs -dNOPAUSE -sDEVICE=pdfwrite -sOUTPUTFILE="${2}" -dCompatibilityLevel=1.4 -dPDFSETTINGS=/printer -dBATCH `find ${WORKDIR} -name dark-*pdf -depth 1 | sort -V | paste -sd ' ' -` >/dev/null 2>&1
 
 # Clean up after ourselves
 cleanup
