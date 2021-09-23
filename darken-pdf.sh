@@ -26,7 +26,7 @@ WORKDIR=/tmp/$(hexdump -n 12 -v -e '/1 "%02X"' /dev/urandom)
 
 # Make sure we clean up after ourselves.
 # See https://www.shellscript.sh/trap.html
-#trap cleanup 1 2 3 6
+trap cleanup 1 2 3 6
 cleanup() {
   echo "Cleaning up."
   rm -rf "${WORKDIR}"
