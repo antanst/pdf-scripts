@@ -40,47 +40,37 @@ PAGE_LAST=$NUM_OF_PAGES
 INDEX=0
 
 # Get number of pages of PDF
-TOTAL_PAGES=$(pdfinfo "${1}" | grep -a Pages | awk '{print $2}')
+TOTAL_PAGES=$(pdfinfo "${1}" | grep Pages | awk '{print $2}')
 echo "Total pages: ${TOTAL_PAGES}" >&2
-
-# Ensure TOTAL_PAGES is a number
-if ! [[ "$TOTAL_PAGES" =~ ^[0-9]+$ ]]; then
-    echo "Error: Could not determine number of pages" >&2
-    exit 1
-fi
 
 # Split PDF to smaller PDFs
 echo "Splitting PDF..." 2>&1
 COMMANDS=""
 while [ "${PAGE_FIRST}" -le "${TOTAL_PAGES}" ]
 do
-    COMMANDS=${COMMANDS}" '""nice ${BASEDIR}/split-pdf.sh \"${1}\" ${PAGE_FIRST} ${PAGE_LAST} $WORKDIR/p${INDEX}.pdf 2>/dev/null""'"
+    COMMANDS=${COMMANDS}" '""${BASEDIR}/split-pdf.sh \"${1}\" ${PAGE_FIRST} ${PAGE_LAST} $WORKDIR/p${INDEX}.pdf 2>/dev/null""'"
     PAGE_FIRST=$(expr "$PAGE_LAST" + 1)
     PAGE_LAST=$(expr "$PAGE_FIRST" + "$NUM_OF_PAGES")
     INDEX=$(expr "${INDEX}" + 1)
 done
 
-eval "nice parallel --bar ::: ${COMMANDS}" # See https://stackoverflow.com/questions/7454526/variable-containing-multiple-args-with-quotes-in-bash
+eval "parallel --bar ::: ${COMMANDS}" # See https://stackoverflow.com/questions/7454526/variable-containing-multiple-args-with-quotes-in-bash
 
 # Convert each PDF to images,
 # darken images, and combine
 # darkened images to new PDFs
 COMMANDS1=""
-COMMANDS2=""
 COMMANDS3=""
 for file in "${WORKDIR}"/p*.pdf;
 do
     DIR="${WORKDIR}/$(basename "${file}" .pdf)"
     mkdir -p "${DIR}"
-    COMMANDS1=${COMMANDS1}" '""convert -colorspace RGB -density 300 -alpha remove \"${file}\" ${DIR}/output-%05d.png""'"
-    COMMANDS2=${COMMANDS2}" '""mogrify -morphology erode diamond:1 ${DIR}/output*.png""'"
+    COMMANDS1=${COMMANDS1}" '""convert -colorspace Gray -density 300 -gamma 0.9 -alpha remove \"${file}\" ${DIR}/output-%05d.png""'"
     COMMANDS3=${COMMANDS3}" '""convert ${DIR}/output*.png ${WORKDIR}/dark-$(basename "${file}" .pdf).pdf""'"
 done
 
 echo "Splitting PDFs to images..." >&2
 eval "nice parallel --bar ::: ${COMMANDS1}"
-echo "Darkening images..." >&2
-eval "nice parallel --bar ::: ${COMMANDS2}"
 echo "Merging images to PDFs..." >&2
 eval "nice parallel --bar ::: ${COMMANDS3}"
 
